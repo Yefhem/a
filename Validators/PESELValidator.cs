@@ -1,51 +1,45 @@
 using System;
 using System.Linq;
+using UserInfoApp.Models;
 
 namespace UserInfoApp.Validators
 {
-    public class PESELValidator
+    public class PESELValidator : IValidator<(string Pesel, DateTime BirthDate, Gender Gender)>
     {
-        public static bool Validate(string pesel, DateTime birthDate, string gender, out string error)
+        public (bool IsValid, string Error) Validate((string Pesel, DateTime BirthDate, Gender Gender) input)
         {
-            error = string.Empty;
-
+            var (pesel, birthDate, gender) = input;
+            
             if (string.IsNullOrWhiteSpace(pesel))
             {
-                error = "PESEL number cannot be empty!";
-                return false;
+                return (false, "PESEL number cannot be empty!");
             }
 
             if (pesel.Length != 11)
             {
-                error = "PESEL number must be exactly 11 digits!";
-                return false;
+                return (false, "PESEL number must be exactly 11 digits!");
             }
 
             if (!pesel.All(char.IsDigit))
             {
-                error = "PESEL number must contain only digits!";
-                return false;
+                return (false, "PESEL number must contain only digits!");
             }
 
             try
             {
                 int[] digits = pesel.Select(c => c - '0').ToArray();
                 
-                // Validate birth date from PESEL matches provided birth date
                 int peselYear = digits[0] * 10 + digits[1];
                 int peselMonth = digits[2] * 10 + digits[3];
                 int peselDay = digits[4] * 10 + digits[5];
 
-                // Adjust month and determine century based on month coding in PESEL
                 int actualYear = birthDate.Year;
                 int actualMonth = birthDate.Month;
                 int actualDay = birthDate.Day;
 
-                // Convert actual date to PESEL format
                 int expectedPeselYear = actualYear % 100;
                 int expectedPeselMonth = actualMonth;
                 
-                // Adjust month based on century
                 if (actualYear >= 2000 && actualYear < 2100)
                     expectedPeselMonth += 20;
                 else if (actualYear >= 2100 && actualYear < 2200)
@@ -59,20 +53,16 @@ namespace UserInfoApp.Validators
                     peselMonth != expectedPeselMonth || 
                     peselDay != actualDay)
                 {
-                    error = "PESEL number does not match the provided birth date!";
-                    return false;
+                    return (false, "PESEL number does not match the provided birth date!");
                 }
 
-                // Validate gender
-                string peselGender = GetGender(pesel);
-                if ((gender == "M" && peselGender != "Male") ||
-                    (gender == "F" && peselGender != "Female"))
+                var peselGender = GetGender(pesel);
+                if ((gender == Gender.Male && peselGender == Gender.Female) ||
+                    (gender == Gender.Female && peselGender == Gender.Male))
                 {
-                    error = $"PESEL number indicates {peselGender} but you selected {(gender == "M" ? "Male" : "Female")}!";
-                    return false;
+                    return (false, $"PESEL number indicates {peselGender} but you selected {gender}!");
                 }
 
-                // Validate checksum
                 int[] weights = { 1, 3, 7, 9, 1, 3, 7, 9, 1, 3, 1 };
                 int sum = 0;
                 for (int i = 0; i < 11; i++)
@@ -82,23 +72,25 @@ namespace UserInfoApp.Validators
 
                 if (sum % 10 != 0)
                 {
-                    error = "Invalid PESEL number! Checksum verification failed.";
-                    return false;
+                    return (false, "Invalid PESEL number! Checksum verification failed.");
                 }
 
-                return true;
+                return (true, string.Empty);
             }
             catch
             {
-                error = "Invalid PESEL number format!";
-                return false;
+                return (false, "Invalid PESEL number format!");
             }
         }
 
-        public static string GetGender(string pesel)
+        public string Format(string pesel) => pesel;
+
+        public string Format((string Pesel, DateTime BirthDate, Gender Gender) input) => input.Pesel;
+
+        private static Gender GetGender(string pesel)
         {
             int genderDigit = pesel[9] - '0';
-            return genderDigit % 2 == 0 ? "Female" : "Male";
+            return genderDigit % 2 == 0 ? Gender.Female : Gender.Male;
         }
     }
 }

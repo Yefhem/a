@@ -3,16 +3,13 @@ using System.Linq;
 
 namespace UserInfoApp.Validators
 {
-    public class PhoneValidator
+    public class PhoneValidator : IValidator<string>
     {
-        public static bool Validate(string phone, out string error)
+        public (bool IsValid, string Error) Validate(string phone)
         {
-            error = string.Empty;
-
             if (string.IsNullOrWhiteSpace(phone))
             {
-                error = "Phone number cannot be empty!";
-                return false;
+                return (false, "Phone number cannot be empty!");
             }
 
             // Remove all whitespace
@@ -20,29 +17,31 @@ namespace UserInfoApp.Validators
 
             if (!cleanPhone.StartsWith("+48"))
             {
-                error = "Phone number must start with +48 (Polish country code)!";
-                return false;
+                return (false, "Phone number must start with +48 (Polish country code)!");
             }
 
             if (cleanPhone.Length != 12) // +48 + 9 digits
             {
-                error = "Invalid Polish phone number! Must have 9 digits after +48.";
-                return false;
+                return (false, "Invalid Polish phone number! Must have 9 digits after +48.");
             }
 
             if (!cleanPhone.Substring(3).All(char.IsDigit))
             {
-                error = "Invalid phone number! Must contain only digits after +48.";
-                return false;
+                return (false, "Invalid phone number! Must contain only digits after +48.");
             }
 
-            return true;
+            return (true, string.Empty);
         }
 
-        public static string Format(string phone)
+        public string Format(string phone)
         {
-            string digits = new string(phone.Where(c => !char.IsWhiteSpace(c)).ToArray()).Substring(3);
-            return $"+48{digits.Substring(0,3)}{digits.Substring(3,3)}{digits.Substring(6,3)}";
+            if (string.IsNullOrWhiteSpace(phone)) return string.Empty;
+            
+            string digits = new string(phone.Where(c => !char.IsWhiteSpace(c)).ToArray());
+            if (digits.Length < 11) return phone;
+            
+            digits = digits.StartsWith("+48") ? digits.Substring(3) : digits;
+            return $"+48 {digits.Substring(0,3)} {digits.Substring(3,3)} {digits.Substring(6,3)}";
         }
     }
 }

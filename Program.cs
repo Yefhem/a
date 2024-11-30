@@ -1,5 +1,6 @@
 using System;
 using UserInfoApp.Models;
+using UserInfoApp.Services;
 using UserInfoApp.Validators;
 
 namespace UserInfoApp
@@ -8,26 +9,20 @@ namespace UserInfoApp
     {
         private const int MaxAttempts = 3;
 
-        static void ShowInformation(UserInfo userInfo, string failedField = null)
+        static void ShowInformation(User user, string failedField = null)
         {
             Console.WriteLine("\nInformation Summary:");
-            if (!string.IsNullOrEmpty(userInfo.Birthday))
-                Console.WriteLine($"Birthday: {BirthdayValidator.Format(userInfo.Birthday)}{(failedField == "Birthday" ? " ❌" : " ✓")}");
-            if (!string.IsNullOrEmpty(userInfo.Gender))
-                Console.WriteLine($"Gender: {GenderValidator.Format(userInfo.Gender)}{(failedField == "Gender" ? " ❌" : " ✓")}");
-            if (!string.IsNullOrEmpty(userInfo.Email))
-                Console.WriteLine($"Email: {userInfo.Email}{(failedField == "Email" ? " ❌" : " ✓")}");
-            if (!string.IsNullOrEmpty(userInfo.Name))
-                Console.WriteLine($"Name: {userInfo.Name}{(failedField == "Name" ? " ❌" : " ✓")}");
-            if (!string.IsNullOrEmpty(userInfo.Phone))
-                Console.WriteLine($"Phone: {PhoneValidator.Format(userInfo.Phone)}{(failedField == "Phone" ? " ❌" : " ✓")}");
-            if (!string.IsNullOrEmpty(userInfo.PESEL))
-                Console.WriteLine($"PESEL: {userInfo.PESEL}{(failedField == "PESEL" ? " ❌" : " ✓")}");
+            Console.WriteLine($"Birthday: {user.Birthday:yyyy-MM-dd}{(failedField == "Birthday" ? " ❌" : " ✓")}");
+            Console.WriteLine($"Gender: {user.Gender}{(failedField == "Gender" ? " ❌" : " ✓")}");
+            Console.WriteLine($"Email: {user.Email}{(failedField == "Email" ? " ❌" : " ✓")}");
+            Console.WriteLine($"Name: {user.Name}{(failedField == "Name" ? " ❌" : " ✓")}");
+            Console.WriteLine($"Phone: {user.Phone}{(failedField == "Phone" ? " ❌" : " ✓")}");
+            Console.WriteLine($"PESEL: {user.PESEL}{(failedField == "PESEL" ? " ❌" : " ✓")}");
         }
 
-        static void ExitWithError(UserInfo userInfo, string failedField)
+        static void ExitWithError(User user, string failedField)
         {
-            ShowInformation(userInfo, failedField);
+            ShowInformation(user, failedField);
             Console.WriteLine($"\nValidation failed for {failedField} after {MaxAttempts} attempts.");
             Console.WriteLine("Thank you for trying. Goodbye!");
             Environment.Exit(0);
@@ -37,7 +32,15 @@ namespace UserInfoApp
         {
             Console.WriteLine("Welcome to User Information Collection System");
             Console.WriteLine($"You have {MaxAttempts} attempts for each field.\n");
-            var userInfo = new UserInfo();
+
+            var userService = new UserService(
+                new BirthdayValidator(),
+                new EmailValidator(),
+                new PhoneValidator(),
+                new PESELValidator()
+            );
+
+            var user = User.Create();
             DateTime? birthDate = null;
 
             // Birthday validation
@@ -47,21 +50,20 @@ namespace UserInfoApp
             {
                 attempts++;
                 Console.Write($"Please enter your birthday (format: YY/MM/DD) [Attempt {attempts}/{MaxAttempts}]: ");
-                userInfo.Birthday = Console.ReadLine()?.Trim() ?? "";
+                string birthday = Console.ReadLine()?.Trim() ?? "";
                 
-                if (BirthdayValidator.Validate(userInfo.Birthday, out string birthdayError))
+                var (valid, error, parsedDate) = userService.ValidateBirthday(birthday);
+                if (valid && parsedDate.HasValue)
                 {
-                    var parts = userInfo.Birthday.Split('/');
-                    int twoDigitYear = int.Parse(parts[0]);
-                    int year = twoDigitYear >= 0 && twoDigitYear < 30 ? 2000 + twoDigitYear : 1900 + twoDigitYear;
-                    birthDate = new DateTime(year, int.Parse(parts[1]), int.Parse(parts[2]));
+                    birthDate = parsedDate.Value;
+                    user = user.WithBirthday(parsedDate.Value);
                     isValid = true;
                 }
                 else
                 {
-                    Console.WriteLine($"Error: {birthdayError}");
+                    Console.WriteLine($"Error: {error}");
                     if (attempts >= MaxAttempts)
-                        ExitWithError(userInfo, "Birthday");
+                        ExitWithError(user, "Birthday");
                 }
             } while (!isValid);
 
@@ -72,17 +74,23 @@ namespace UserInfoApp
             {
                 attempts++;
                 Console.Write($"Please enter your gender (M/F) [Attempt {attempts}/{MaxAttempts}]: ");
-                userInfo.Gender = Console.ReadLine()?.Trim().ToUpper() ?? "";
+                string genderInput = Console.ReadLine()?.Trim().ToUpper() ?? "";
 
-                if (!string.IsNullOrWhiteSpace(userInfo.Gender) && (userInfo.Gender == "M" || userInfo.Gender == "F"))
+                if (genderInput == "M")
                 {
+                    user = user.WithGender(Gender.Male);
+                    isValid = true;
+                }
+                else if (genderInput == "F")
+                {
+                    user = user.WithGender(Gender.Female);
                     isValid = true;
                 }
                 else
                 {
                     Console.WriteLine("Error: Gender must be either 'M' for Male or 'F' for Female!");
                     if (attempts >= MaxAttempts)
-                        ExitWithError(userInfo, "Gender");
+                        ExitWithError(user, "Gender");
                 }
             } while (!isValid);
 
@@ -93,17 +101,19 @@ namespace UserInfoApp
             {
                 attempts++;
                 Console.Write($"Please enter your email address [Attempt {attempts}/{MaxAttempts}]: ");
-                userInfo.Email = Console.ReadLine()?.Trim().ToLower() ?? "";
+                string email = Console.ReadLine()?.Trim().ToLower() ?? "";
 
-                if (EmailValidator.Validate(userInfo.Email, out string emailError))
+                var (valid, error) = userService.ValidateEmail(email);
+                if (valid)
                 {
+                    user = user.WithEmail(email);
                     isValid = true;
                 }
                 else
                 {
-                    Console.WriteLine($"Error: {emailError}");
+                    Console.WriteLine($"Error: {error}");
                     if (attempts >= MaxAttempts)
-                        ExitWithError(userInfo, "Email");
+                        ExitWithError(user, "Email");
                 }
             } while (!isValid);
 
@@ -114,21 +124,19 @@ namespace UserInfoApp
             {
                 attempts++;
                 Console.Write($"Please enter your full name [Attempt {attempts}/{MaxAttempts}]: ");
-                userInfo.Name = Console.ReadLine()?.Trim() ?? "";
+                string name = Console.ReadLine()?.Trim() ?? "";
 
-                if (!string.IsNullOrWhiteSpace(userInfo.Name) && userInfo.Name.Length <= 50)
+                var (valid, error) = userService.ValidateName(name);
+                if (valid)
                 {
+                    user = user.WithName(name);
                     isValid = true;
                 }
                 else
                 {
-                    if (string.IsNullOrWhiteSpace(userInfo.Name))
-                        Console.WriteLine("Error: Name cannot be empty!");
-                    else
-                        Console.WriteLine("Error: Name cannot be longer than 50 characters!");
-
+                    Console.WriteLine($"Error: {error}");
                     if (attempts >= MaxAttempts)
-                        ExitWithError(userInfo, "Name");
+                        ExitWithError(user, "Name");
                 }
             } while (!isValid);
 
@@ -139,17 +147,19 @@ namespace UserInfoApp
             {
                 attempts++;
                 Console.Write($"Please enter your Polish phone number (format: +48 XXX XXX XXX) [Attempt {attempts}/{MaxAttempts}]: ");
-                userInfo.Phone = Console.ReadLine()?.Trim() ?? "";
+                string phone = Console.ReadLine()?.Trim() ?? "";
 
-                if (PhoneValidator.Validate(userInfo.Phone, out string phoneError))
+                var (valid, error) = userService.ValidatePhone(phone);
+                if (valid)
                 {
+                    user = user.WithPhone(userService.FormatPhone(phone));
                     isValid = true;
                 }
                 else
                 {
-                    Console.WriteLine($"Error: {phoneError}");
+                    Console.WriteLine($"Error: {error}");
                     if (attempts >= MaxAttempts)
-                        ExitWithError(userInfo, "Phone");
+                        ExitWithError(user, "Phone");
                 }
             } while (!isValid);
 
@@ -160,23 +170,25 @@ namespace UserInfoApp
             {
                 attempts++;
                 Console.Write($"\nPlease enter your PESEL number (11 digits) [Attempt {attempts}/{MaxAttempts}]: ");
-                userInfo.PESEL = Console.ReadLine()?.Trim() ?? "";
+                string pesel = Console.ReadLine()?.Trim() ?? "";
 
-                if (PESELValidator.Validate(userInfo.PESEL, birthDate ?? DateTime.MinValue, userInfo.Gender, out string peselError))
+                var (valid, error) = userService.ValidatePESEL(pesel, birthDate ?? DateTime.MinValue, user.Gender);
+                if (valid)
                 {
+                    user = user.WithPESEL(pesel);
                     isValid = true;
                 }
                 else
                 {
-                    Console.WriteLine($"Error: {peselError}");
+                    Console.WriteLine($"Error: {error}");
                     if (attempts >= MaxAttempts)
-                        ExitWithError(userInfo, "PESEL");
+                        ExitWithError(user, "PESEL");
                 }
             } while (!isValid);
 
             // Show success message and collected information
             Console.WriteLine("\n🎉 Congratulations! All information has been successfully validated! 🎉");
-            ShowInformation(userInfo);
+            ShowInformation(user);
             Console.WriteLine("\nThank you for providing your information. Have a great day! 👋");
         }
     }

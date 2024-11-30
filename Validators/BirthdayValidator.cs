@@ -3,25 +3,22 @@ using System.Text.RegularExpressions;
 
 namespace UserInfoApp.Validators
 {
-    public class BirthdayValidator
+    public class BirthdayValidator : IValidator<string>
     {
         private const int MinimumAge = 18;
+        private const int MaximumAge = 120;
         private static readonly Regex DateFormatRegex = new(@"^\d{2}/\d{2}/\d{2}$");
 
-        public static bool Validate(string birthday, out string error)
+        public (bool IsValid, string Error) Validate(string birthday)
         {
-            error = string.Empty;
-
             if (string.IsNullOrWhiteSpace(birthday))
             {
-                error = "Birthday cannot be empty!";
-                return false;
+                return (false, "Birthday cannot be empty!");
             }
 
             if (!DateFormatRegex.IsMatch(birthday))
             {
-                error = "Birthday must be in format YY/MM/DD (e.g., 90/12/31 for December 31, 1990)!";
-                return false;
+                return (false, "Birthday must be in format YY/MM/DD (e.g., 90/12/31 for December 31, 1990)!");
             }
 
             try
@@ -31,57 +28,46 @@ namespace UserInfoApp.Validators
                 int month = int.Parse(parts[1]);
                 int day = int.Parse(parts[2]);
 
-                // Validate month and day ranges before creating DateTime
                 if (month < 1 || month > 12)
                 {
-                    error = "Month must be between 1 and 12!";
-                    return false;
+                    return (false, "Month must be between 1 and 12!");
                 }
 
-                if (day < 1 || day > DateTime.DaysInMonth(2000, month))  // Use 2000 as it's a leap year
+                if (day < 1 || day > DateTime.DaysInMonth(2000, month))
                 {
-                    error = $"Invalid day for month {month}!";
-                    return false;
+                    return (false, $"Invalid day for month {month}!");
                 }
 
-                // Convert two-digit year to four-digit year
-                // Years 00-29 are considered 2000-2029
-                // Years 30-99 are considered 1930-1999
                 int year = twoDigitYear >= 0 && twoDigitYear < 30 ? 2000 + twoDigitYear : 1900 + twoDigitYear;
-
                 var birthDate = new DateTime(year, month, day);
                 
                 if (birthDate > DateTime.Today)
                 {
-                    error = "Birthday cannot be in the future!";
-                    return false;
+                    return (false, "Birthday cannot be in the future!");
                 }
 
                 int age = CalculateAge(birthDate);
                 if (age < MinimumAge)
                 {
-                    error = $"You must be at least {MinimumAge} years old to register!";
-                    return false;
+                    return (false, $"You must be at least {MinimumAge} years old to register!");
                 }
 
-                if (age > 120)
+                if (age > MaximumAge)
                 {
-                    error = "Please check your birth date. Age cannot be over 120 years!";
-                    return false;
+                    return (false, $"Please check your birth date. Age cannot be over {MaximumAge} years!");
                 }
 
-                return true;
+                return (true, string.Empty);
             }
             catch
             {
-                error = "Invalid date! Please enter a valid date in YY/MM/DD format.";
-                return false;
+                return (false, "Invalid date! Please enter a valid date in YY/MM/DD format.");
             }
         }
 
-        public static string Format(string birthday)
+        public string Format(string birthday)
         {
-            if (string.IsNullOrWhiteSpace(birthday)) return "";
+            if (string.IsNullOrWhiteSpace(birthday)) return string.Empty;
 
             try
             {
@@ -93,6 +79,23 @@ namespace UserInfoApp.Validators
             catch
             {
                 return birthday;
+            }
+        }
+
+        public DateTime? ParseBirthday(string birthday)
+        {
+            try
+            {
+                var parts = birthday.Split('/');
+                int twoDigitYear = int.Parse(parts[0]);
+                int month = int.Parse(parts[1]);
+                int day = int.Parse(parts[2]);
+                int year = twoDigitYear >= 0 && twoDigitYear < 30 ? 2000 + twoDigitYear : 1900 + twoDigitYear;
+                return new DateTime(year, month, day);
+            }
+            catch
+            {
+                return null;
             }
         }
 

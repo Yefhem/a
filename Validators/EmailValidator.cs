@@ -3,54 +3,48 @@ using System.Text.RegularExpressions;
 
 namespace UserInfoApp.Validators
 {
-    public class EmailValidator
+    public class EmailValidator : IValidator<string>
     {
         private static readonly Regex EmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
 
-        public static bool Validate(string email, out string error)
+        public (bool IsValid, string Error) Validate(string email)
         {
-            error = string.Empty;
-
             if (string.IsNullOrWhiteSpace(email))
             {
-                error = "Email address cannot be empty!";
-                return false;
+                return (false, "Email address cannot be empty!");
             }
 
             string trimmedEmail = email.Trim();
 
             if (!trimmedEmail.Contains("@"))
             {
-                error = "Invalid email address! Missing @ symbol.";
-                return false;
+                return (false, "Invalid email address! Missing @ symbol.");
             }
 
             var parts = trimmedEmail.Split('@');
             if (parts.Length != 2)
             {
-                error = "Invalid email address! Should contain exactly one @ symbol.";
-                return false;
+                return (false, "Invalid email address! Should contain exactly one @ symbol.");
             }
 
             if (parts[0].Length == 0)
             {
-                error = "Invalid email address! Local part (before @) cannot be empty.";
-                return false;
+                return (false, "Invalid email address! Local part (before @) cannot be empty.");
             }
 
             if (!parts[1].Contains("."))
             {
-                error = "Invalid email address! Domain part must include an extension (e.g., .com).";
-                return false;
+                return (false, "Invalid email address! Domain part must include an extension (e.g., .com).");
             }
 
             if (!EmailRegex.IsMatch(trimmedEmail))
             {
-                error = "Invalid email format! Please enter a valid email address.";
-                return false;
+                return (false, "Invalid email format! Please enter a valid email address.");
             }
 
-            return true;
+            return (true, string.Empty);
         }
+
+        public string Format(string email) => email?.Trim() ?? string.Empty;
     }
 }
