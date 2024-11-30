@@ -1,0 +1,14 @@
+/Users/celik/CascadeProjects/UserInfoApp/bin/Debug/net7.0/UserInfoApp
+/Users/celik/CascadeProjects/UserInfoApp/bin/Debug/net7.0/UserInfoApp.deps.json
+/Users/celik/CascadeProjects/UserInfoApp/bin/Debug/net7.0/UserInfoApp.runtimeconfig.json
+/Users/celik/CascadeProjects/UserInfoApp/bin/Debug/net7.0/UserInfoApp.dll
+/Users/celik/CascadeProjects/UserInfoApp/bin/Debug/net7.0/UserInfoApp.pdb
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/UserInfoApp.GeneratedMSBuildEditorConfig.editorconfig
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/UserInfoApp.AssemblyInfoInputs.cache
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/UserInfoApp.AssemblyInfo.cs
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/UserInfoApp.csproj.CoreCompileInputs.cache
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/UserInfoApp.dll
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/refint/UserInfoApp.dll
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/UserInfoApp.pdb
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/UserInfoApp.genruntimeconfig.cache
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net7.0/ref/UserInfoApp.dll
