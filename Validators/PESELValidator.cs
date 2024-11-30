@@ -5,7 +5,7 @@ namespace UserInfoApp.Validators
 {
     public class PESELValidator
     {
-        public static bool Validate(string pesel, out string error)
+        public static bool Validate(string pesel, DateTime birthDate, string gender, out string error)
         {
             error = string.Empty;
 
@@ -31,50 +31,44 @@ namespace UserInfoApp.Validators
             {
                 int[] digits = pesel.Select(c => c - '0').ToArray();
                 
-                // Extract date parts
-                int year = digits[0] * 10 + digits[1];
-                int month = digits[2] * 10 + digits[3];
-                int day = digits[4] * 10 + digits[5];
+                // Validate birth date from PESEL matches provided birth date
+                int peselYear = digits[0] * 10 + digits[1];
+                int peselMonth = digits[2] * 10 + digits[3];
+                int peselDay = digits[4] * 10 + digits[5];
 
-                // Adjust month and year based on century
-                if (month > 80)
+                // Adjust month and determine century based on month coding in PESEL
+                int actualYear = birthDate.Year;
+                int actualMonth = birthDate.Month;
+                int actualDay = birthDate.Day;
+
+                // Convert actual date to PESEL format
+                int expectedPeselYear = actualYear % 100;
+                int expectedPeselMonth = actualMonth;
+                
+                // Adjust month based on century
+                if (actualYear >= 2000 && actualYear < 2100)
+                    expectedPeselMonth += 20;
+                else if (actualYear >= 2100 && actualYear < 2200)
+                    expectedPeselMonth += 40;
+                else if (actualYear >= 2200 && actualYear < 2300)
+                    expectedPeselMonth += 60;
+                else if (actualYear >= 1800 && actualYear < 1900)
+                    expectedPeselMonth += 80;
+
+                if (peselYear != expectedPeselYear || 
+                    peselMonth != expectedPeselMonth || 
+                    peselDay != actualDay)
                 {
-                    year += 1800;
-                    month -= 80;
-                }
-                else if (month > 60)
-                {
-                    year += 2200;
-                    month -= 60;
-                }
-                else if (month > 40)
-                {
-                    year += 2100;
-                    month -= 40;
-                }
-                else if (month > 20)
-                {
-                    year += 2000;
-                    month -= 20;
-                }
-                else
-                {
-                    year += 1900;
+                    error = "PESEL number does not match the provided birth date!";
+                    return false;
                 }
 
-                // Validate date
-                try
+                // Validate gender
+                string peselGender = GetGender(pesel);
+                if ((gender == "M" && peselGender != "Male") ||
+                    (gender == "F" && peselGender != "Female"))
                 {
-                    var birthDate = new DateTime(year, month, day);
-                    if (birthDate > DateTime.Today)
-                    {
-                        error = "PESEL indicates a birth date in the future!";
-                        return false;
-                    }
-                }
-                catch
-                {
-                    error = "PESEL contains invalid birth date!";
+                    error = $"PESEL number indicates {peselGender} but you selected {(gender == "M" ? "Male" : "Female")}!";
                     return false;
                 }
 

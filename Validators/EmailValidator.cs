@@ -5,6 +5,8 @@ namespace UserInfoApp.Validators
 {
     public class EmailValidator
     {
+        private static readonly Regex EmailRegex = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
+
         public static bool Validate(string email, out string error)
         {
             error = string.Empty;
@@ -15,34 +17,40 @@ namespace UserInfoApp.Validators
                 return false;
             }
 
-            if (!email.Contains("@"))
+            string trimmedEmail = email.Trim();
+
+            if (!trimmedEmail.Contains("@"))
             {
                 error = "Invalid email address! Missing @ symbol.";
                 return false;
             }
 
-            if (!email.Contains("."))
+            var parts = trimmedEmail.Split('@');
+            if (parts.Length != 2)
             {
-                error = "Invalid email address! Missing domain extension (e.g., .com, .net).";
+                error = "Invalid email address! Should contain exactly one @ symbol.";
                 return false;
             }
 
-            try
+            if (parts[0].Length == 0)
             {
-                var regex = new Regex(@"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
-                if (!regex.IsMatch(email))
-                {
-                    error = "Invalid email address! Please enter a valid email (e.g., example@domain.com).";
-                    return false;
-                }
-
-                return true;
-            }
-            catch
-            {
-                error = "Invalid email format!";
+                error = "Invalid email address! Local part (before @) cannot be empty.";
                 return false;
             }
+
+            if (!parts[1].Contains("."))
+            {
+                error = "Invalid email address! Domain part must include an extension (e.g., .com).";
+                return false;
+            }
+
+            if (!EmailRegex.IsMatch(trimmedEmail))
+            {
+                error = "Invalid email format! Please enter a valid email address.";
+                return false;
+            }
+
+            return true;
         }
     }
 }

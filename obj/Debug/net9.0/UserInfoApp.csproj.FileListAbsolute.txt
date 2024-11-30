@@ -12,3 +12,4 @@
 /Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net9.0/UserInfoApp.pdb
 /Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net9.0/UserInfoApp.genruntimeconfig.cache
 /Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net9.0/ref/UserInfoApp.dll
+/Users/celik/CascadeProjects/UserInfoApp/obj/Debug/net9.0/UserInfoApp.sourcelink.json

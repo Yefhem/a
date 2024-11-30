@@ -22,7 +22,7 @@ namespace UserInfoApp.Validators
 
             string peselGender = PESELValidator.GetGender(pesel);
             bool genderMatch = (gender == "M" && peselGender == "Male") || 
-                             (gender == "F" && peselGender == "Female");
+            (gender == "F" && peselGender == "Female");
 
             if (!genderMatch)
             {

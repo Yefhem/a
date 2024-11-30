@@ -42,7 +42,7 @@ namespace UserInfoApp.Validators
         public static string Format(string phone)
         {
             string digits = new string(phone.Where(c => !char.IsWhiteSpace(c)).ToArray()).Substring(3);
-            return $"+48 {digits.Substring(0,3)} {digits.Substring(3,3)} {digits.Substring(6,3)}";
+            return $"+48{digits.Substring(0,3)}{digits.Substring(3,3)}{digits.Substring(6,3)}";
         }
     }
 }
